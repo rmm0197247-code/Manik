@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MK - AI Prediction</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      color: white;
+      margin: 0;
+      padding: 10px;
+
+      /* 🔥 এখানে আপনার ব্যাকগ্রাউন্ড লিংক বসান */
+      background: url("https://photos.app.goo.gl/EnCeCdeXWQY9Kugg6") no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    .header {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: red;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .header img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+    }
+
+    /* 🔥 Social Buttons */
+    .social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+.social-buttons a {
+  padding: 10px 18px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.3s;
+}
+.social-buttons a.telegram { color: #0088cc; }
+.social-buttons a.whatsapp { color: #25d366; }
+.social-buttons a:hover { transform: scale(1.1); background: rgba(0,0,0,0.8); }
+    .info-box, .prediction-box {
+      background: rgba(0,0,0,0.7);
+      padding: 12px;
+      margin: 0 auto 12px;
+      max-width: 420px;
+      text-align: center;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .info-box { border-left: 5px solid #2196f3; color: #4fc3f7; }
+    .prediction-box {
+      border-left: 5px solid #ff4081;
+      color: #ff4081;
+      transition: all 0.4s ease;
+    }
+    .prediction-box.animate {
+      animation: pulse 0.6s ease;
+    }
+    @keyframes pulse {
+      0%,100% { transform: scale(1); box-shadow: 0 0 10px #ff408180; }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px #ff4081cc; }
+    }
+    .timer { font-size: 14px; color: #bbb; margin-top: 5px; }
+    .table-container {
+      background: rgba(0,0,0,0.6);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td { padding: 8px; text-align: center; }
+    th { background: #2c2c2c; color: #ffcc00; }
+    tr:nth-child(even) { background: #181818; }
+    .number.red { color: #ff3b3b; font-weight: bold; }
+    .number.green { color: #00e676; font-weight: bold; }
+    .number.violet { color: #bb86fc; font-weight: bold; }
+    .dot {
+      width: 10px; height: 10px;
+      display: inline-block;
+      border-radius: 50%;
+      margin: 0 2px;
+    }
+    .dot.red { background: #ff3b3b; }
+    .dot.green { background: #00e676; }
+    .dot.violet { background: #bb86fc; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="https://photos.app.goo.gl/EnCeCdeXWQY9Kugg6//" alt="logo">
+    mk community okay 
+  </div>
+
+  <!-- 🔥 Telegram & WhatsApp Buttons -->
+  <div class="social-buttons">
+  <a href="https://t.me/vipsignalwingo1" target="_blank" class="telegram">
+    <i class="fab fa-telegram"></i> Telegram
+  </a>
+  <a href="/channel/0029VbBrseM9WtBxSyaIiD2w" target="_blank" class="whatsapp">
+    <i class="fab fa-whatsapp"></i> WhatsApp
+  </a>
+</div>
+
+  <div class="info-box">
+    <div>Next Period: <span id="nextPeriod">Loading...</span></div>
+    <div class="timer">Next in: <span id="timer">--</span> sec</div>
+  </div>
+
+  <div class="prediction-box" id="predictionBox">Analyzing...</div>
+
+  <div class="table-container" id="historyTable"><div class="loader">Loading history...</div></div>
+
+<script>
+const API_URL = "https://draw.ar-lottery01.com/WinGo/WinGo_30S/GetHistoryIssuePage.json";
+let lastPeriod = "", lastPrediction = "";
+
+function getBigSmall(num) { return parseInt(num) >= 5 ? "Big" : "Small"; }
+function getColorClass(colorStr) {
+  const colors = colorStr.split(',');
+  return colors.length > 1 ? 'violet' : colors[0].trim();
+}
+function getDots(colorStr) {
+  return colorStr.split(',').map(c => `<span class="dot ${c.trim()}"></span>`).join('');
+}
+function weightedAnalysis(list) {
+  const weight = [10,9,8,7,6,5,4,3,2,1];
+  const count = { Big: 0, Small: 0 };
+  for (let i = 0; i < 10; i++) count[getBigSmall(list[i].number)] += weight[i];
+  return { prediction: count.Big >= count.Small ? "Big" : "Small", confidence: 60 };
+}
+function patternFrequencyAnalysis(list) {
+  const map = {};
+  for (let i = 0; i < list.length - 5; i++) {
+    const key = list.slice(i, i + 5).map(x => getBigSmall(x.number)).join('');
+    const next = getBigSmall(list[i + 5].number);
+    if (!map[key]) map[key] = { Big: 0, Small: 0 };
+    map[key][next]++;
+  }
+  const recentPattern = list.slice(0, 5).map(x => getBigSmall(x.number)).join('');
+  const stats = map[recentPattern];
+  if (stats) {
+    const total = stats.Big + stats.Small;
+    const confidence = Math.floor((Math.max(stats.Big, stats.Small) / total) * 100);
+    return { prediction: stats.Big >= stats.Small ? "Big" : "Small", confidence };
+  }
+  return weightedAnalysis(list);
+}
+function updatePredictionBox(pred, conf) {
+  const box = document.getElementById("predictionBox");
+  box.classList.remove("animate");
+  void box.offsetWidth;
+  box.classList.add("animate");
+  box.innerHTML = `Prediction: <b>${pred}</b><br>Confidence: ${conf}%`;
+}
+function loadHistory() {
+  fetch(API_URL).then(res => res.json()).then(data => {
+    const list = data?.data?.list || [];
+    if (!list.length) return;
+    const currentPeriod = list[0].issueNumber;
+    const nextPeriod = String(BigInt(currentPeriod) + 1n);
+    document.getElementById("nextPeriod").innerText = nextPeriod;
+    if (lastPeriod !== currentPeriod) {
+      const { prediction, confidence } = patternFrequencyAnalysis(list);
+      updatePredictionBox(prediction, confidence);
+      lastPrediction = prediction;
+      lastPeriod = currentPeriod;
+    }
+    let html = `<table><thead><tr><th>Period</th><th>Number</th><th>Big/Small</th><th>Color</th></tr></thead><tbody>`;
+    for (let item of list) {
+      const size = getBigSmall(item.number);
+      const color = getColorClass(item.color);
+      html += `<tr><td>${item.issueNumber}</td><td class="number ${color}">${item.number}</td><td>${size}</td><td>${getDots(item.color)}</td></tr>`;
+    }
+    html += "</tbody></table>";
+    document.getElementById("historyTable").innerHTML = html;
+  });
+}
+function startTimer() {
+  setInterval(() => {
+    const sec = new Date().getSeconds();
+    const left = (30 - (sec % 30)) % 30;
+    document.getElementById("timer").innerText = left || 30;
+  }, 1000);
+}
+loadHistory();
+setInterval(loadHistory, 3000);
+startTimer();
+</script>
+</body>
+</html>
